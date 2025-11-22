@@ -20,9 +20,13 @@ class Particle {
     constructor(x, y, text) {
         this.x = x; this.y = y; this.text = text;
         
-        // ▼▼▼ [수정] 글자 크기를 화면 너비 비례(약 1.3%)로 설정하여 5K에서도 잘 보이게 함 ▼▼▼
-        // 맥북(1512px)에서는 약 20px, 아이맥(5120px)에서는 약 66px이 됩니다.
-        this.fontSize = window.innerWidth * 0.013; 
+        // ▼▼▼ [수정] 스크립트 본문(#script-body)과 동일한 크기 비율 적용 ▼▼▼
+        // CSS의 clamp(1.4rem, 1.6vw, 2.4rem)를 JS로 구현
+        // 최소 22px, 반응형 1.6vw, 최대 38px
+        const vw = window.innerWidth;
+        const calculatedSize = vw * 0.016; // 1.6vw (스크립트와 동일)
+        
+        this.fontSize = Math.max(22, Math.min(calculatedSize, 38));
 
         const fontWeight = '500'; 
         if (ctx) {
