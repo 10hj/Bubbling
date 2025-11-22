@@ -5,7 +5,7 @@ let animationState = 'stopped'; // 'stopped', 'chaos', 'gathering'
 let animationFrameId;
 let canvas, ctx;
 let resolveGatheringPromise = null;
-let particleCreationInterval = null; // Timeout/Interval 핸들러를 위해 유지
+let particleCreationInterval = null; 
 
 const defaultTextFragments = [
     "안 괜찮은데", "별로라고 말할까", "불편하네", "나는 그렇게 생각 안하는데",
@@ -20,17 +20,14 @@ class Particle {
     constructor(x, y, text) {
         this.x = x; this.y = y; this.text = text;
         
-        // ▼▼▼ [수정] 스크립트 본문(#script-body)과 동일한 크기 비율 적용 ▼▼▼
-        // CSS의 clamp(1.4rem, 1.6vw, 2.4rem)를 JS로 구현
-        // 최소 22px, 반응형 1.6vw, 최대 38px
-        const vw = window.innerWidth;
-        const calculatedSize = vw * 0.016; // 1.6vw (스크립트와 동일)
-        
-        this.fontSize = Math.max(22, Math.min(calculatedSize, 38));
+        // ▼▼▼ [핵심] CSS에서 계산된 실제 폰트 사이즈를 가져와서 적용 ▼▼▼
+        // 이렇게 하면 CSS에서 clamp로 제어한 16px ~ 19px 비율을 JS에서도 완벽하게 따라갑니다.
+        // 파티클은 본문보다 약간만 더 크게 설정 (x 1.2 배)
+        const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        this.fontSize = rootFontSize * 1.2; 
 
         const fontWeight = '500'; 
         if (ctx) {
-            // [수정] 위에서 설정한 fontSize 변수 사용
             ctx.font = `${fontWeight} ${this.fontSize}px 'Pretendard', sans-serif`;
             this.textWidth = ctx.measureText(this.text).width;
         } else {
@@ -63,7 +60,6 @@ class Particle {
             ctx.fillStyle = "rgba(210, 210, 210, 1)";
         }
 
-        // [수정] this.fontSize 변수 사용
         ctx.font = `500 ${this.fontSize}px 'Pretendard', sans-serif`;
         
         ctx.textAlign = 'center';
@@ -269,7 +265,6 @@ function startGatheringAnimation() {
 
             let hasResolved = false;
 
-            // 안전장치: 4초 후에도 애니메이션이 끝나지 않으면 강제로 다음 단계 진행
             const failsafeTimeout = setTimeout(() => {
                 if (!hasResolved) {
                     console.warn("Gathering animation failsafe triggered. Proceeding to voice recognition.");
@@ -278,7 +273,6 @@ function startGatheringAnimation() {
                 }
             }, 4000);
 
-            // 이상적인 경우: 모든 파티클이 사라지면 안전장치를 해제하고 다음 단계 진행
             resolveGatheringPromise = () => {
                 if (!hasResolved) {
                     clearTimeout(failsafeTimeout);
