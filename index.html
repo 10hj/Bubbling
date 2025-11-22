@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emotion Distortion</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="intro-container">
+    <div class="logo-container">
+      <h1 class="logo-text"></h1>
+    </div>
+    <button id="startBtn" class="btn">시작하기</button>
+  </div>
+  
+  <div id="episode-selection-container" class="hidden">
+    <!-- ▼▼▼ [수정] .guide-pill 클래스 추가 ▼▼▼ -->
+    <div class="info-text guide-pill">
+        드래그하여 탐색하고, 휠 스크롤로 확대/축소하세요.
+    </div>
+    <!-- ▲▲▲ [수정 완료] ▲▲▲ -->
+    <div id="viewport">
+        <div id="stage">
+            <div class="book"><h2>넷플릭스 영화</h2><p>EPISODE 1</p></div>
+            <div class="book"><h2>엄마의 김치</h2><p>EPISODE 2</p></div>
+            <div class="book"><h2>배달음식</h2><p>EPISODE 3</p></div>
+            <div class="book"><h2>드라마</h2><p>EPISODE 4</p></div>
+            <div class="book"><h2>카페 아이</h2><p>EPISODE 5</p></div>
+            <div class="book"><h2>지하철 임산부석</h2><p>EPISODE 6</p></div>
+            <div class="book"><h2>전단지</h2><p>EPISODE 7</p></div>
+            <div class="book"><h2>열차 안 취식</h2><p>EPISODE 8</p></div>
+            <div class="book"><h2>도서관 휴게실</h2><p>EPISODE 9</p></div>
+            <div class="book"><h2>카페 카공족</h2><p>EPISODE 10</p></div>
+        </div>
+    </div>
+    <div id="episode-tooltip" class="hidden">
+      <h2 id="tooltip-title"></h2>
+      <p id="tooltip-description"></p>
+    </div>
+  </div>
+
+  <div id="script-view" class="hidden">
+    <button id="close-button">&times;</button>
+    <div class="script-content-wrapper">
+      <div class="script-content">
+        <div id="script-body"></div>
+      </div>
+    </div>
+  </div>
+  <canvas id="particleCanvas" class="hidden"></canvas>
+  <div id="script-columns" class="hidden"></div>
+  <div id="inspiration-ui" class="hidden">
+    <header class="inspiration-header">
+      <h1>마음속에 쌓아둔 생각, 어떻게 해소하고 싶으신가요?</h1>
+      <p>AI가 제안하는 예시를 참고하여, 당신의 이야기를 자유롭게 들려주세요.</p>
+    </header>
+    <main class="inspiration-chips"></main>
+  </div>
+  <div id="listening-ui" class="hidden">
+    <div class="circle-container">
+      <div id="circle" class="ring listening-ring"></div>
+    </div>
+    <span id="statusText">듣고 있어요...</span>
+  </div>
+  
+  <!-- ▼▼▼ [수정] .guide-pill 클래스 추가 ▼▼▼ -->
+  <div id="re-prompt-guide" class="re-prompt-guide guide-pill">다시 한번 표현해보세요</div>
+  
+  <div id="initial-voice-prompt" class="re-prompt-guide guide-pill">마이크를 향해 당신의 감정을 들려주세요</div>
+  <!-- ▲▲▲ [수정 완료] ▲▲▲ -->
+
+  <div id="response-guides" class="response-guides-container hidden">
+    <div class="text-guide" id="guide-positive">괜찮아요</div>
+    <div class="text-guide" id="guide-negative">별로예요</div>
+  </div>
+  <div id="sentence-container"></div>
+  <div id="blur-overlay" class="hidden"></div>
+  <button id="retryBtn" class="btn hidden">다시 하기</button>
+  
+  <div id="hint-snackbar">
+    <div class="snackbar-icon">i</div>
+    <div id="snackbar-text"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="sentenceGenerator.js"></script>
+  <script src="textScramble.js"></script>
+  <script src="speech.js"></script>
+  <script src="particleEffect.js"></script>
+  <script src="resolution-phase.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
