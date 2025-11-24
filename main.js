@@ -119,6 +119,11 @@ let currentScriptId = null;
 let currentDialogueAudio = null;
 let playbackInterval = null;
 let gutAudioInstance = null;
+
+// ▼▼▼ [추가] 딜레이 타이머 변수 선언 ▼▼▼
+let startDelayTimer = null; 
+// ▲▲▲ 추가 완료 ▲▲▲
+
 const toLines = s => s.split('/').map(x=>x.trim()).filter(Boolean);
 
 // --- 3) 핵심 기능 ---
@@ -137,30 +142,24 @@ function playGutLoop(index = 0) {
   return gutAudio;
 }
 
-// ▼▼▼ [수정] 3분 타임아웃 로직 복원 ▼▼▼
+// 3분 타임아웃 로직 (유지)
 function startTimeoutChecker() {
   lastChangeTime = Date.now();
   if (timeoutChecker) clearInterval(timeoutChecker);
   
   timeoutChecker = setInterval(() => {
     const elapsedTime = Date.now() - lastChangeTime;
-    
-    // 3분 동안 lastChangeTime이 갱신되지 않으면 (즉, onresult가 한 번도 호출되지 않으면)
     if (allowRecognition && elapsedTime >= 3*60*1000) {
       console.log("⏰ 3분 비활성 타임아웃. 재시도 화면 표시.");
       allowRecognition = false;
       if (recognition) recognition.stop();
-      
-      // '다시 하기' 버튼 및 오버레이 표시
       listeningUI.classList.add('hidden');
       blurOverlay.classList.remove('hidden');
       retryBtn.classList.remove('hidden');
-      
-      clearInterval(timeoutChecker); // 타임아웃 중지
+      clearInterval(timeoutChecker);
     }
   }, 1000);
 }
-// ▲▲▲ 수정 완료 ▲▲▲
 
 function preloadDialogueAssets() {
   dialogueScripts.forEach(ds => {
@@ -411,11 +410,17 @@ async function startExperience(selectedScript) {
   currentDialogueAudio.addEventListener('pause', () => gutAudioInstance.pause());
   currentDialogueAudio.addEventListener('ended', () => gutAudioInstance.pause(), { once: true });
 
-  playScriptKaraoke();
-
-  currentDialogueAudio.play().catch(()=>{});
+  // ▼▼▼ [수정] 2초 딜레이 추가 (기존 로직 유지) ▼▼▼
+  // 기존 코드: playScriptKaraoke(); currentDialogueAudio.play(); startChaosAnimation(...);
   
-  startChaosAnimation(particleFragments[selectedScript.id]); 
+  if (startDelayTimer) clearTimeout(startDelayTimer); // 안전장치
+
+  startDelayTimer = setTimeout(() => {
+    playScriptKaraoke();
+    currentDialogueAudio.play().catch(()=>{});
+    startChaosAnimation(particleFragments[selectedScript.id]); 
+  }, 2000); // 2초 대기
+  // ▲▲▲ 수정 완료 ▲▲▲
   
   currentDialogueAudio.onended = async () => {
     if (playbackInterval) clearTimeout(playbackInterval);
@@ -426,12 +431,9 @@ async function startExperience(selectedScript) {
       
       setTimeout(() => {
         responseGuides.classList.remove('hidden');
-        // ▼▼▼ 수정된 부분 ▼▼▼
-        // 1초 뒤에 안내 문구가 나타나도록 추가 지연 설정
         setTimeout(() => {
           document.getElementById('initial-voice-prompt')?.classList.add('visible');
         }, 1000);
-        // ▲▲▲ 수정 완료 ▲▲▲
       }, 500);
     }
   };
@@ -485,8 +487,7 @@ function initializeEpisodeSelector() {
     let isDragging = false;
     let startX, startY, dragStartX, dragStartY;
 
-    // ▼▼▼ [추가] 에피소드 랜덤 배치 로직 ▼▼▼
-    // 1. 기존의 하드코딩된 위치 10개를 배열로 정의
+    // (보내주신 파일의 랜덤 배치 및 Fisher-Yates 로직 유지)
     const positions = [
         { top: '20%', left: '15%' }, { top: '55%', left: '10%' },
         { top: '10%', left: '40%' }, { top: '70%', left: '35%' },
@@ -495,33 +496,25 @@ function initializeEpisodeSelector() {
         { top: '45%', left: '80%' }, { top: '45%', left: '50%' }
     ];
 
-    // 2. Fisher-Yates 셔플 알고리즘
     function shuffle(array) {
         let currentIndex = array.length, randomIndex;
-        // 배열이 빌 때까지 요소를 섞습니다.
         while (currentIndex !== 0) {
-            // 남은 요소 중 하나를 무작위로 선택합니다.
             randomIndex = Math.floor(Math.random() * currentIndex);
             currentIndex--;
-            // 현재 요소와 선택된 요소를 바꿉니다.
             [array[currentIndex], array[randomIndex]] = [
                 array[randomIndex], array[currentIndex]];
         }
         return array;
     }
 
-    // 3. 위치 배열을 섞음
     const shuffledPositions = shuffle(positions);
 
-    // 4. books DOM 요소에 섞인 위치를 적용
-    // (리스너 추가 루프 이전에 위치를 먼저 설정합니다)
     books.forEach((book, index) => {
         if (shuffledPositions[index]) {
             book.style.top = shuffledPositions[index].top;
             book.style.left = shuffledPositions[index].left;
         }
     });
-    // ▲▲▲ [추가 완료] ▲▲▲
 
     function applyTransform() { stage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`; }
     
@@ -548,7 +541,6 @@ function initializeEpisodeSelector() {
         requestAnimationFrame(applyTransform);
     });
 
-    // (기존 루프는 이벤트 리스너 추가용으로 유지)
     books.forEach((book, index) => {
         let isBookDown = false;
         let hasDragged = false; 
@@ -624,6 +616,13 @@ closeButton.addEventListener('click', () => {
   scriptView.style.opacity = 0;
   episodeSelectionContainer.classList.remove('hidden');
   
+  // ▼▼▼ [추가] 딜레이 중 닫기 버튼 클릭 시 타이머 취소 (재생 방지) ▼▼▼
+  if (startDelayTimer) {
+    clearTimeout(startDelayTimer);
+    startDelayTimer = null;
+  }
+  // ▲▲▲ 추가 완료 ▲▲▲
+
   if (currentDialogueAudio) {
     currentDialogueAudio.pause();
     currentDialogueAudio = null;

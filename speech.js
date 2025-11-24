@@ -105,7 +105,9 @@ recognition.onresult = async function (event) {
   responseGuides.classList.add('hidden');
   rePromptGuide.classList.remove('visible');
   if (initialVoicePrompt) initialVoicePrompt.classList.remove('visible');
-  sentenceContainer.innerHTML = ''; 
+  
+  // ▼▼▼ [수정] 무관한 답변 시 문장을 보존하므로, 여기서는 innerHTML=''를 바로 호출하지 않음 ▼▼▼
+  // sentenceContainer.innerHTML = '';  <-- 삭제
 
   const strictPositiveKeywords = ['괜찮아요', '괜찮아'];
   const strictNegativeKeywords = ['별로예요', '별로'];
@@ -116,6 +118,11 @@ recognition.onresult = async function (event) {
 
   if (isStrictNegative) {
     console.log("부정 답변 감지. 해소 단계로 전환합니다.");
+    
+    // [추가] 혹시 문장이 위로 올라가 있었다면 스타일 초기화
+    sentenceContainer.classList.remove('previous-sentence-mode');
+    sentenceContainer.innerHTML = ''; // 이제 지워도 됨
+
     currentPhase = 'choice'; // (상태 리셋)
     
     allowRecognition = false;
@@ -136,6 +143,9 @@ recognition.onresult = async function (event) {
   // ▼▼▼ [수정] isStrictPositive 블록 (스낵바 2번째 1회, 1초 지연 로직) ▼▼▼
   } else if (isStrictPositive) {
     console.log("긍정 답변 감지. '재조합 문장(헛소리)'을 생성합니다.");
+    
+    // [추가] 문장이 위로 올라가 있었다면 스타일 초기화 (새 문장 생성을 위해)
+    sentenceContainer.classList.remove('previous-sentence-mode');
     
     allowRecognition = false;       
     currentPhase = 'reprompt'; // 👈 [핵심] "재조합 문장 후" 상태로 변경
@@ -202,15 +212,22 @@ recognition.onresult = async function (event) {
 
   } else {
     // (무관한 답변)
-    console.log(`무관한 답변 감지: "${transcript}". 다음 단계로 넘어가지 않고 다시 듣습니다.`);
-    currentPhase = 'choice'; // 👈 [핵심] "선택지" 상태로 리셋
-    responseGuides.classList.remove('hidden');
+    console.log(`무관한 답변 감지: "${transcript}". 문장을 유지하고 선택지를 다시 띄웁니다.`);
     
-    // ▼▼▼ [수정] 무관한 답변 시, "기본" 가이드 텍스트로 복원 ▼▼▼
+    currentPhase = 'choice'; 
+    responseGuides.classList.remove('hidden'); // 선택지(괜찮아요/별로예요) 다시 표시
+    
+    // ▼▼▼ [수정] 무관한 답변 시, 문장을 지우지 않고 위로 밀어올림 ▼▼▼
+    if (sentenceContainer.innerText.trim() !== '') {
+        sentenceContainer.classList.add('previous-sentence-mode');
+    }
+    
+    // ▼▼▼ [수정] 무관한 답변 시, 가이드 텍스트 변경 ▼▼▼
     setTimeout(() => {
       const initialPrompt = document.getElementById('initial-voice-prompt');
       if (initialPrompt) {
-        initialPrompt.textContent = '마이크를 향해 당신의 감정을 들려주세요'; // 👈 [수정]
+        // [수정] 멘트 변경: "방금 생성된 문장, 정말 괜찮으신가요?"
+        initialPrompt.textContent = '방금 생성된 문장, 정말 괜찮으신가요?'; 
         initialPrompt.classList.add('visible');
       }
     }, 1000);
